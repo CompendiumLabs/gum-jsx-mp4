@@ -85,17 +85,6 @@ test('WASM memory stays bounded while encoding a long sequence', () => {
   } finally { wasm.video_close() }
 })
 
-test('CLI exports with an empty PATH and no FFmpeg executable', async () => {
-  const path = await directory()
-  const source = join(path, 'scene.jsx'), output = join(path, 'out.mp4')
-  await writeFile(source, 'return { size:[66,50], fps:2, duration:1, frame:() => <Circle fill="red" /> }')
-  const result = Bun.spawnSync([process.execPath, join(import.meta.dir, '../src/cli.ts'), 'render', source, '-o', output], {
-    env: { ...process.env, PATH: '' },
-  })
-  expect(result.exitCode).toBe(0)
-  expect((await readFile(output)).subarray(4, 8).toString()).toBe('ftyp')
-})
-
 test('abort on a later event-loop turn interrupts an export and cleans up', async () => {
   const path = await directory()
   const video = evaluate_mp4('return { size:[64,48], fps:30, duration:100, frame:() => <Circle /> }')

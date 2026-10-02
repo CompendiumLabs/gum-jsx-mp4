@@ -65,7 +65,7 @@ backends, particularly around narrow colored strokes.
 
 ## Verification and limits
 
-- Bun tests verify export with an empty PATH, session isolation, owned output
+- Bun tests verify export, session isolation, owned output
   buffers, dimension/timing/quality validation, and incomplete-session handling.
 - A 2,000-frame test checks that WASM linear memory stays bounded after warmup.
 - Decoder tests use FFmpeg/ffprobe as independent readers: colors, dimensions,

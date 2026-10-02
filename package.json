@@ -4,23 +4,22 @@
   "description": "Render animated Gum figures to MP4 with Rust and WebAssembly.",
   "module": "src/index.ts",
   "types": "src/index.ts",
-  "exports": { ".": "./src/index.ts", "./encoder": "./src/encoder.ts" },
-  "bin": { "gum-video": "src/cli.ts" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./encoder": "./src/encoder.ts"
+  },
   "type": "module",
   "private": true,
   "scripts": {
     "build:wasm": "bun scripts/build-wasm.ts",
     "test:rust": "cargo test --manifest-path wasm/Cargo.toml --locked --offline",
-    "gum-video": "bun src/cli.ts",
     "test": "bun test ./test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@gum-jsx/cli": "2.0.0",
     "@gum-jsx/core": "2.0.0",
     "@gum-jsx/math": "2.0.0",
-    "@gum-jsx/png": "2.0.0",
-    "commander": "^14.0.3"
+    "@gum-jsx/png": "2.0.0"
   },
   "devDependencies": {
     "@types/bun": "latest",

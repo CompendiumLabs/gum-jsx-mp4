@@ -117,3 +117,19 @@ test('cancellation cleans up without replacing existing output', async () => {
   expect(await readFile(output, 'utf8')).toBe('existing')
   expect(await readdir(path)).toEqual(['out.mp4'])
 })
+
+test('MP4 sinks receive file-equivalent chunks with backpressure and propagate failures', async () => {
+  const output = join(await directory(), 'out.bin')
+  const chunks: Uint8Array[] = []
+  let writing = false
+  await render_mp4(scene(), async bytes => {
+    expect(writing).toBe(false)
+    writing = true
+    await new Promise(resolve => setTimeout(resolve, 1))
+    chunks.push(bytes)
+    writing = false
+  })
+  await render_mp4(scene(), output)
+  expect(await readFile(output)).toEqual(Buffer.concat(chunks))
+  await expect(render_mp4(scene(), () => { throw new Error('sink failure') })).rejects.toThrow('sink failure')
+})

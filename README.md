@@ -3,7 +3,8 @@
 A video is a Gum figure evaluated at each frame time. This Bun package lays out
 frames, rasterizes them through `@gum-jsx/png`, and encodes H.264/MP4 using bundled
 WebAssembly. No FFmpeg, native add-on, install script, or Rust toolchain is needed
-for ordinary use. The separate `gum-video` command keeps video out of the core CLI.
+for ordinary use. This package is a library; use the main `gum` CLI for MP4 output
+and frame previews.
 
 ## Run the example
 
@@ -11,28 +12,27 @@ From the workspace root:
 
 ```sh
 bun install
-mkdir -p gum-jsx-video/out
+mkdir -p gum-jsx-mp4/out
 
 # Preview in a terminal supporting Kitty graphics:
-bun run --silent --cwd gum-jsx-video gum-video frame examples/orbit.jsx --time 1.5
+bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/orbit.jsx --time 1.5
 
 # Or save a PNG:
-bun run --cwd gum-jsx-video gum-video frame examples/orbit.jsx \
-  --time 1.5 -o out/orbit.png
+bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/orbit.jsx \
+  --time 1.5 -o gum-jsx-mp4/out/orbit.png
 
 # Export MP4 entirely within Bun:
-bun run --cwd gum-jsx-video gum-video render examples/orbit.jsx \
-  -o out/orbit.mp4
+bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/orbit.jsx \
+  -o gum-jsx-mp4/out/orbit.mp4
 ```
 
 The example is a six-second, 960 × 540 orbit at 30 fps. Edit its frame function to
-change the animation. `render --qp 18` sets the H.264 quantizer; valid integers
+change the animation. `--qp 18` sets the H.264 quantizer; valid integers
 are 10–51, with lower values giving higher quality and larger files. Default: 18.
 This is a fixed quantizer, not FFmpeg/x264's CRF quality scale.
 
-With no `-o`, `frame` writes Kitty graphics to stdout using the shared
-`@gum-jsx/cli/kitty` formatter, including when stdout is redirected. Use `-o`
-to save PNG bytes. Preview and PNG export do not initialize the video encoder.
+With no `-o`, the main CLI writes Kitty graphics to stdout, including when stdout
+is redirected. Use `-o frame.png` to save PNG bytes. Preview and PNG export do not initialize the video encoder.
 
 ## Source format
 
@@ -60,7 +60,7 @@ return {
 - Frame count is `ceil(duration * fps)`; encoded duration is that count divided
   by fps, rounded to microseconds. The exact end time is not sampled. Fractional
   frame rates such as `30000 / 1001` use rounded absolute timestamps to avoid drift.
-- `frame --time` selects `floor(time * fps)`; time must be in `[0, duration)`.
+- `gum --time` selects `floor(time * fps)`; time must be in `[0, duration)`.
 - Canvas dimensions override source viewport dimensions. Video dimensions must
   be even integers from 2 to 4096. Encoder fps must be in `[0.001, 1000]`, with
   fewer than 4,294,967,295 frames. PNG previews retain the rasterizer's limits.
@@ -83,9 +83,12 @@ await render_mp4(mp4, 'scene.mp4', { qp: 18 })
 await Bun.write('frame.png', create_renderer(mp4).png(30))
 ```
 
-You can also construct a typed `MP4` directly. `create_renderer` exposes
+You can also construct a typed `Video` directly. `create_renderer` exposes
 `frame_count`, `fragment(index)`, `pixels(index)`, and `png(index)`.
-`render_mp4` accepts `qp`, an AbortSignal `signal`, and
+`render_mp4` accepts a destination path or a chunk callback as its second argument.
+Callback writes are awaited for backpressure; a failed callback may leave a partial
+stream. File writes preserve an existing destination on failure. The renderer
+always writes MP4 regardless of the path extension. Its options accept `qp`, an AbortSignal `signal`, and
 `on_progress(completed, total)` after each frame is encoded and written.
 
 ### Portable encoder
@@ -143,26 +146,25 @@ reused, and only the current raw and compressed frame buffers are retained.
 
 minih264 is an experimental upstream encoder. See [WASM implementation](docs/WASM.md)
 for build details, measurements, and limitations, and
-[third-party notices](THIRD_PARTY_NOTICES.md) for its license. The old `--ffmpeg`
-option and `RenderOptions.ffmpeg` have been removed.
+[third-party notices](THIRD_PARTY_NOTICES.md) for its license.
 
 ## Development
 
 ```sh
-bun run --cwd gum-jsx-video test
-bun run --cwd gum-jsx-video typecheck
+bun run --cwd gum-jsx-mp4 test
+bun run --cwd gum-jsx-mp4 typecheck
 ```
 
 Only decoder-based integration tests require FFmpeg and ffprobe; they are skipped
-if either is missing. Export, cleanup, cancellation, and CLI tests run without them.
+if either is missing. Export, cleanup, and cancellation tests run without them.
 The package is private while its API is being established.
 
 To rebuild the vendored WASM, install Rust with `wasm32-unknown-unknown` standard
 libraries and Clang supporting the wasm32 target, then run:
 
 ```sh
-bun run --cwd gum-jsx-video build:wasm
-bun run --cwd gum-jsx-video test:rust
+bun run --cwd gum-jsx-mp4 build:wasm
+bun run --cwd gum-jsx-mp4 test:rust
 ```
 
 The build uses locked, offline Cargo with no third-party Rust crates, plus the

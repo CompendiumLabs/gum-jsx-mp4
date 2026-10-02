@@ -11,26 +11,37 @@ export type RenderOptions = Readonly<{
   signal?: AbortSignal
   on_progress?: (completed: number, total: number) => void
 }>
+export type Mp4Sink = (chunk: Uint8Array) => void | Promise<void>
 
-/** Stream WASM-encoded MP4 fragments to disk; replace the output only on success. */
-export async function render_mp4(video: Video, output: string, options: RenderOptions = {}): Promise<void> {
+/** Stream MP4 to a sink, or atomically replace a file after a successful export.
+ * Sink writes are awaited for backpressure; a failed sink may contain partial MP4. */
+export async function render_mp4(video: Video, output: string | Mp4Sink, options: RenderOptions = {}): Promise<void> {
   const renderer = create_renderer(video)
-  if (!output.toLowerCase().endsWith('.mp4')) throw new Error('Video output must end in .mp4')
   options.signal?.throwIfAborted()
   const encoder = create_encoder({ size: renderer.video.size, fps: renderer.video.fps,
     frame_count: renderer.frame_count, qp: options.qp })
-  const destination = resolve(output)
   let temporary: string | undefined
+  async function frames(write: Mp4Sink) {
+    for (let frame = 0; frame < renderer.frame_count; frame++) {
+      await setImmediate()
+      options.signal?.throwIfAborted()
+      await write(encoder.encode(renderer.pixels(frame).data))
+      options.on_progress?.(frame + 1, renderer.frame_count)
+    }
+    encoder.finish()
+    options.signal?.throwIfAborted()
+  }
   try {
+    if (typeof output === 'function') {
+      await frames(output)
+      return
+    }
+    const destination = resolve(output)
     temporary = await mkdtemp(join(dirname(destination), '.gum-video-'))
     const file = join(temporary, 'video.mp4')
     const handle = await open(file, 'wx')
     try {
-      for (let frame = 0; frame < renderer.frame_count; frame++) {
-        // Yield between frames so signals and UI progress can run during exports.
-        await setImmediate()
-        options.signal?.throwIfAborted()
-        const bytes = encoder.encode(renderer.pixels(frame).data)
+      await frames(async bytes => {
         let offset = 0
         while (offset < bytes.length) {
           options.signal?.throwIfAborted()
@@ -38,9 +49,7 @@ export async function render_mp4(video: Video, output: string, options: RenderOp
           if (!bytesWritten) throw new Error('Could not write encoded video')
           offset += bytesWritten
         }
-        options.on_progress?.(frame + 1, renderer.frame_count)
-      }
-      encoder.finish()
+      })
     } finally {
       await handle.close()
     }
