@@ -63,21 +63,25 @@ test('PNG works without FFmpeg', () => {
   expect([...png.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10])
 })
 
-test('missing encoder preserves existing output and removes temporary files', async () => {
+test('frame failure preserves existing output and removes temporary files', async () => {
   const path = await directory()
   const output = join(path, 'out.mp4')
   await writeFile(output, 'existing')
-  await expect(render_video(scene(), output, { ffmpeg: join(path, 'missing-ffmpeg') })).rejects.toThrow('FFmpeg was not found')
+  const video = scene()
+  await expect(render_video({ ...video, frame(context) {
+    if (context.frame === 1) throw new Error('test frame failure')
+    return video.frame(context)
+  } }, output)).rejects.toThrow('test frame failure')
   expect(await readFile(output, 'utf8')).toBe('existing')
   expect(await readdir(path)).toEqual(['out.mp4'])
 })
 
-test('reports encoder errors and cleans partial output', async () => {
+test('progress callback failure cleans partial output', async () => {
   const path = await directory()
-  const encoder = join(path, 'fail')
-  await writeFile(encoder, '#!/bin/sh\ncat >/dev/null\necho "test encoder failure" >&2\nexit 9\n', { mode: 0o755 })
-  await expect(render_video(scene(), join(path, 'out.mp4'), { ffmpeg: encoder })).rejects.toThrow('test encoder failure')
-  expect(await readdir(path)).toEqual(['fail'])
+  await expect(render_video(scene(), join(path, 'out.mp4'), {
+    on_progress() { throw new Error('test progress failure') },
+  })).rejects.toThrow('test progress failure')
+  expect(await readdir(path)).toEqual([])
 })
 
 const has_ffmpeg = Boolean(Bun.which('ffmpeg') && Bun.which('ffprobe'))
@@ -86,10 +90,10 @@ test.skipIf(!has_ffmpeg)('MP4 has correct timing, dimensions, frame order, and c
   const completed: number[] = []
   await render_video(scene(), output, { on_progress: count => { completed.push(count) } })
   expect(completed).toEqual([1, 2, 3])
-  const probe = Bun.spawnSync(['ffprobe', '-v', 'error', '-show_streams', '-of', 'json', output])
+  const probe = Bun.spawnSync(['ffprobe', '-v', 'error', '-count_frames', '-show_streams', '-of', 'json', output])
   expect(probe.exitCode).toBe(0)
   const stream = JSON.parse(probe.stdout.toString()).streams[0]
-  expect([stream.codec_name, stream.width, stream.height, stream.nb_frames, stream.r_frame_rate, stream.pix_fmt])
+  expect([stream.codec_name, stream.width, stream.height, stream.nb_read_frames, stream.r_frame_rate, stream.pix_fmt])
     .toEqual(['h264', 64, 48, '3', '3/1', 'yuv420p'])
   expect(Number(stream.duration)).toBeCloseTo(1)
   const decoded = Bun.spawnSync(['ffmpeg', '-v', 'error', '-i', output, '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1'])
@@ -102,7 +106,7 @@ test.skipIf(!has_ffmpeg)('MP4 has correct timing, dimensions, frame order, and c
   }
 })
 
-test.skipIf(!has_ffmpeg)('cancellation cleans up without replacing existing output', async () => {
+test('cancellation cleans up without replacing existing output', async () => {
   const path = await directory()
   const output = join(path, 'out.mp4')
   await writeFile(output, 'existing')
