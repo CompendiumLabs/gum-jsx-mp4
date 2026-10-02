@@ -12,7 +12,7 @@ export type Video = Readonly<{
   frame: (context: FrameContext) => Element
 }>
 
-export function validate_video(value: unknown): Video {
+export function validate_mp4(value: unknown): Video {
   if (!value || typeof value !== 'object') throw new TypeError('Source must return a video object')
   const video = value as Video
   if (!Array.isArray(video.size) || video.size.length !== 2
@@ -30,13 +30,13 @@ export function validate_video(value: unknown): Video {
 }
 
 /** Evaluate Gum function-body source once; its result is the video description. */
-export function evaluate_video(source: string, name = 'video.jsx'): Video {
-  return validate_video(new Evaluator({ scope: { ...math, ...timing }, name }).evaluate(source))
+export function evaluate_mp4(source: string, name = 'video.jsx'): Video {
+  return validate_mp4(new Evaluator({ scope: { ...math, ...timing }, name }).evaluate(source))
 }
 
 /** Reuse fonts and layout caches while rendering independently addressable frames. */
 export function create_renderer(value: Video) {
-  const video = validate_video(value)
+  const video = validate_mp4(value)
   const [width, height] = video.size
   const pass = new LayoutPass()
   const fonts = math.createMathFonts()

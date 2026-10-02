@@ -3,12 +3,12 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { create_encoder } from '../src/encoder'
-import { create_renderer, evaluate_video, render_video } from '../src'
+import { create_renderer, evaluate_mp4, render_mp4 } from '../src'
 import { wasm_base64 } from '../src/generated/wasm'
 
 const directories: string[] = []
 async function directory() {
-  const path = await mkdtemp(join(tmpdir(), 'gum-video-encoder-'))
+  const path = await mkdtemp(join(tmpdir(), 'gum-mp4-encoder-'))
   directories.push(path)
   return path
 }
@@ -98,10 +98,10 @@ test('CLI exports with an empty PATH and no FFmpeg executable', async () => {
 
 test('abort on a later event-loop turn interrupts an export and cleans up', async () => {
   const path = await directory()
-  const video = evaluate_video('return { size:[64,48], fps:30, duration:100, frame:() => <Circle /> }')
+  const video = evaluate_mp4('return { size:[64,48], fps:30, duration:100, frame:() => <Circle /> }')
   const controller = new AbortController()
   let frames = 0
-  await expect(render_video(video, join(path, 'out.mp4'), {
+  await expect(render_mp4(video, join(path, 'out.mp4'), {
     signal: controller.signal,
     on_progress(count) {
       frames = count
@@ -148,8 +148,8 @@ test.skipIf(!has_decoder)('fractional fps, macroblock cropping, keyframes, and a
 test.skipIf(!has_decoder)('moving detailed frames decode with bounded pixel error', async () => {
   const output = join(await directory(), 'detail.mp4')
   const source = await readFile(join(import.meta.dir, 'fixtures/detail.jsx'), 'utf8')
-  const video = evaluate_video(source)
-  await render_video(video, output)
+  const video = evaluate_mp4(source)
+  await render_mp4(video, output)
   const decoded = Bun.spawnSync(['ffmpeg', '-v', 'error', '-i', output, '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1'])
   expect(decoded.exitCode).toBe(0)
   const renderer = create_renderer(video), pixels_per_frame = video.size[0] * video.size[1]

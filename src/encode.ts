@@ -13,7 +13,7 @@ export type RenderOptions = Readonly<{
 }>
 
 /** Stream WASM-encoded MP4 fragments to disk; replace the output only on success. */
-export async function render_video(video: Video, output: string, options: RenderOptions = {}): Promise<void> {
+export async function render_mp4(video: Video, output: string, options: RenderOptions = {}): Promise<void> {
   const renderer = create_renderer(video)
   if (!output.toLowerCase().endsWith('.mp4')) throw new Error('Video output must end in .mp4')
   options.signal?.throwIfAborted()

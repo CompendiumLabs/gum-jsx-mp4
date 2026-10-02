@@ -2,11 +2,11 @@ import { afterEach, expect, test } from 'bun:test'
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { create_renderer, evaluate_video, render_video, validate_video, progress, ease_in_out, lerp } from '../src'
+import { create_renderer, evaluate_mp4, render_mp4, validate_mp4, progress, ease_in_out, lerp } from '../src'
 
 const directories: string[] = []
 async function directory() {
-  const path = await mkdtemp(join(tmpdir(), 'gum-video-test-'))
+  const path = await mkdtemp(join(tmpdir(), 'gum-mp4-test-'))
   directories.push(path)
   return path
 }
@@ -15,7 +15,7 @@ afterEach(async () => {
 })
 
 function scene() {
-  return evaluate_video(`return {
+  return evaluate_mp4(`return {
     size: [64, 48], fps: 3, duration: 1,
     frame: ({ frame }) => <Svg width={px(1)} height={px(1)} background={['red', 'lime', 'blue'][frame]} />,
   }`)
@@ -44,9 +44,9 @@ test('frame timing, fixed viewport, and random access', () => {
 
 test('rejects invalid descriptions and frame results', () => {
   for (const invalid of [{ fps: 0 }, { duration: Infinity }, { size: [0, 48] }, { frame: 7 }]) {
-    expect(() => validate_video({ ...scene(), ...invalid })).toThrow()
+    expect(() => validate_mp4({ ...scene(), ...invalid })).toThrow()
   }
-  expect(() => create_renderer(evaluate_video('return { size:[64,48], fps:3, duration:1, frame: () => 42 }')).pixels(1))
+  expect(() => create_renderer(evaluate_mp4('return { size:[64,48], fps:3, duration:1, frame: () => 42 }')).pixels(1))
     .toThrow('Frame 1')
 })
 
@@ -68,7 +68,7 @@ test('frame failure preserves existing output and removes temporary files', asyn
   const output = join(path, 'out.mp4')
   await writeFile(output, 'existing')
   const video = scene()
-  await expect(render_video({ ...video, frame(context) {
+  await expect(render_mp4({ ...video, frame(context) {
     if (context.frame === 1) throw new Error('test frame failure')
     return video.frame(context)
   } }, output)).rejects.toThrow('test frame failure')
@@ -78,7 +78,7 @@ test('frame failure preserves existing output and removes temporary files', asyn
 
 test('progress callback failure cleans partial output', async () => {
   const path = await directory()
-  await expect(render_video(scene(), join(path, 'out.mp4'), {
+  await expect(render_mp4(scene(), join(path, 'out.mp4'), {
     on_progress() { throw new Error('test progress failure') },
   })).rejects.toThrow('test progress failure')
   expect(await readdir(path)).toEqual([])
@@ -88,7 +88,7 @@ const has_ffmpeg = Boolean(Bun.which('ffmpeg') && Bun.which('ffprobe'))
 test.skipIf(!has_ffmpeg)('MP4 has correct timing, dimensions, frame order, and colors', async () => {
   const output = join(await directory(), 'out.mp4')
   const completed: number[] = []
-  await render_video(scene(), output, { on_progress: count => { completed.push(count) } })
+  await render_mp4(scene(), output, { on_progress: count => { completed.push(count) } })
   expect(completed).toEqual([1, 2, 3])
   const probe = Bun.spawnSync(['ffprobe', '-v', 'error', '-count_frames', '-show_streams', '-of', 'json', output])
   expect(probe.exitCode).toBe(0)
@@ -111,7 +111,7 @@ test('cancellation cleans up without replacing existing output', async () => {
   const output = join(path, 'out.mp4')
   await writeFile(output, 'existing')
   const controller = new AbortController()
-  await expect(render_video(scene(), output, {
+  await expect(render_mp4(scene(), output, {
     signal: controller.signal, on_progress: () => controller.abort(),
   })).rejects.toThrow()
   expect(await readFile(output, 'utf8')).toBe('existing')

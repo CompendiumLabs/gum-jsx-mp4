@@ -1,4 +1,4 @@
-# @gum-jsx/video
+# @gum-jsx/mp4
 
 A video is a Gum figure evaluated at each frame time. This Bun package lays out
 frames, rasterizes them through `@gum-jsx/png`, and encodes H.264/MP4 using bundled
@@ -76,27 +76,27 @@ Helpers: `lerp(a, b, progress)`, `progress(time, start, duration)` (clamped), an
 ## Library
 
 ```ts
-import { evaluate_video, create_renderer, render_video } from '@gum-jsx/video'
+import { evaluate_mp4, create_renderer, render_mp4 } from '@gum-jsx/mp4'
 
-const video = evaluate_video(await Bun.file('scene.jsx').text(), 'scene.jsx')
-await render_video(video, 'scene.mp4', { qp: 18 })
-await Bun.write('frame.png', create_renderer(video).png(30))
+const mp4 = evaluate_mp4(await Bun.file('scene.jsx').text(), 'scene.jsx')
+await render_mp4(mp4, 'scene.mp4', { qp: 18 })
+await Bun.write('frame.png', create_renderer(mp4).png(30))
 ```
 
-You can also construct a typed `Video` directly. `create_renderer` exposes
+You can also construct a typed `MP4` directly. `create_renderer` exposes
 `frame_count`, `fragment(index)`, `pixels(index)`, and `png(index)`.
-`render_video` accepts `qp`, an AbortSignal `signal`, and
+`render_mp4` accepts `qp`, an AbortSignal `signal`, and
 `on_progress(completed, total)` after each frame is encoded and written.
 
 ### Portable encoder
 
-`@gum-jsx/video/encoder` has no Node imports or filesystem access. It compiles the
+`@gum-jsx/mp4/encoder` has no Node imports or filesystem access. It compiles the
 embedded WASM lazily, reuses the compiled module, and gives each encoder an
 independent instance. This entry point can be bundled for a browser; runtime
 validation so far is in Bun. Browser CSP must permit WebAssembly compilation.
 
 ```ts
-import { create_encoder } from '@gum-jsx/video/encoder'
+import { create_encoder } from '@gum-jsx/mp4/encoder'
 
 const encoder = create_encoder({ size: [640, 360], fps: 30, frame_count: 90 })
 try {
