@@ -26,8 +26,14 @@ bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/orbit.jsx \
   -o gum-jsx-mp4/out/orbit.mp4
 ```
 
-The example is a six-second, 960 × 540 orbit at 30 fps. Edit its frame function to
-change the animation. `--qp 18` sets the H.264 quantizer; valid integers
+The example is a twelve-second, 960 × 540 spiral traveling through space at 30 fps.
+A fixed perspective camera views the helix from the side and slightly above;
+a fading, depth-sorted trail and a floor grid show its shape and forward motion.
+Edit `start_x`, `end_x`, `radius`, `pitch`, `speed`, or `eye` in `examples/orbit.jsx`
+to change the path or camera. Duration follows the travel distance and speed.
+The trail grows from the starting point; each frame is computed directly from time.
+
+`--qp 18` sets the H.264 quantizer; valid integers
 are 10–51, with lower values giving higher quality and larger files. Default: 18.
 This is a fixed quantizer, not FFmpeg/x264's CRF quality scale.
 
