@@ -75,27 +75,27 @@ const frame = ({ time }) => {
             projection={projection}
           >
             {grid.map(points => (
-              <CoordLine points={points} stroke="#26364a" stroke-width={px(1)} />
+              <Polyline points={points} stroke="#26364a" stroke-width={px(1)} />
             ))}
             <Arrow
               from={{x: -12, y: 0, z: 0}} to={{x: 12, y: 0, z: 0}}
               stroke="#42556e" stroke-width={px(1)}
               stroke-dasharray={px(5)} head-size={px(7)}
             />
-            <CoordLine points={guide} stroke="#2e4058" stroke-width={px(1)} />
-            <CoordLine
+            <Polyline points={guide} stroke="#2e4058" stroke-width={px(1)} />
+            <Polyline
               points={points.map(({x, y}) => ({x, y, z: floor}))}
               stroke="#47b6bd" stroke-width={px(2)} opacity={0.12}
             />
             {segments.map(segment => (
-              <CoordLine
+              <Polyline
                 points={segment.points} stroke={segment.color}
                 stroke-width={px(10 * segment.scale)}
                 stroke-linecap="round" opacity={0.06 * segment.brightness}
               />
             ))}
             {segments.map(segment => (
-              <CoordLine
+              <Polyline
                 points={segment.points} stroke={segment.color}
                 stroke-width={px(3.5 * segment.scale)}
                 stroke-linecap="round"
