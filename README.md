@@ -15,14 +15,14 @@ bun install
 mkdir -p gum-jsx-mp4/out
 
 # Preview in a terminal supporting Kitty graphics:
-bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/orbit.jsx --time 1.5
+bun gum-jsx/src/cli.ts gum-jsx-mp4/examples/orbit.jsx --time 1.5
 
 # Or save a PNG:
-bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/orbit.jsx \
+bun gum-jsx/src/cli.ts gum-jsx-mp4/examples/orbit.jsx \
   --time 1.5 -o gum-jsx-mp4/out/orbit.png
 
 # Export MP4 entirely within Bun:
-bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/orbit.jsx \
+bun gum-jsx/src/cli.ts gum-jsx-mp4/examples/orbit.jsx \
   -o gum-jsx-mp4/out/orbit.mp4
 ```
 
@@ -40,9 +40,9 @@ or `rows` to change the world. Generations are precomputed so previews can seek
 directly to any frame.
 
 ```sh
-bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/life.jsx --time 5 \
+bun gum-jsx/src/cli.ts gum-jsx-mp4/examples/life.jsx --time 5 \
   -o gum-jsx-mp4/out/life.png
-bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/life.jsx \
+bun gum-jsx/src/cli.ts gum-jsx-mp4/examples/life.jsx \
   -o gum-jsx-mp4/out/life.mp4
 ```
 

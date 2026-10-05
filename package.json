@@ -10,7 +10,6 @@
     "./encoder": "./src/encoder.ts"
   },
   "type": "module",
-  "private": true,
   "scripts": {
     "build:wasm": "bun scripts/build-wasm.ts",
     "test:rust": "cargo test --manifest-path wasm/Cargo.toml --locked --offline",
@@ -25,5 +24,19 @@
   "devDependencies": {
     "@types/bun": "latest",
     "typescript": "^7"
-  }
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ]
 }
