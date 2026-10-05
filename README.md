@@ -210,7 +210,7 @@ To rebuild the vendored WASM, install Rust with `wasm32-unknown-unknown` standar
 libraries and Clang supporting the wasm32 target, then run:
 
 ```sh
-bun run --cwd gum-jsx-mp4 build:wasm
+bun run --cwd gum-jsx-mp4 build
 bun run --cwd gum-jsx-mp4 test:rust
 ```
 

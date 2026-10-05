@@ -11,7 +11,7 @@
   },
   "type": "module",
   "scripts": {
-    "build:wasm": "bun scripts/build-wasm.ts",
+    "build": "bun scripts/build-wasm.ts",
     "test:rust": "cargo test --manifest-path wasm/Cargo.toml --locked --offline",
     "test": "bun test ./test",
     "typecheck": "tsc --noEmit"

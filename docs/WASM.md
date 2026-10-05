@@ -34,7 +34,7 @@ It does not need Emscripten, WASI, an archiver, or third-party Cargo dependencie
 The tiny headers in `wasm/include` provide the C codec's only required declarations;
 Rust's compiler runtime supplies memory primitives. Codec assertions remain enabled.
 
-Run `bun run build:wasm` inside the package. The script uses offline, locked Cargo,
+Run `bun run build` inside the package. The script uses offline, locked Cargo,
 rejects modules with host imports, embeds the WASM as base64 JavaScript, and copies
 license notices. The compiled module is about 116 KiB (about 155 KiB as base64).
 It requires neither WASM SIMD nor threads. Initialization is lazy.
