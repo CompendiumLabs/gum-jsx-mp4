@@ -1,5 +1,7 @@
 # @gum-jsx/mp4
 
+[Gum](https://github.com/CompendiumLabs/gum-jsx) — installation, quickstart, and user documentation.
+
 A video is a Gum figure evaluated at each frame time. This Bun package lays out
 frames, rasterizes them through `@gum-jsx/png`, and encodes H.264/MP4 using bundled
 WebAssembly. No FFmpeg, native add-on, install script, or Rust toolchain is needed
