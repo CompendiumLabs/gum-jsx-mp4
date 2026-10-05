@@ -85,4 +85,5 @@ function validate_mp4(value: unknown): Video {
 }
 
 export { Video, is_video, validate_mp4 }
+export { lerp, progress, ease_in_out } from './timing'
 export type { VideoProps, FrameContext, FrameGenerator }

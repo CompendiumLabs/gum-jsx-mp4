@@ -135,6 +135,9 @@ always writes MP4 regardless of the path extension. Its options accept `qp`, an 
 
 ### Portable encoder
 
+Browser hosts can import `Video` and the timing helpers from `@gum-jsx/mp4/video`.
+This entry point describes timelines without importing the encoder or filesystem APIs.
+
 `@gum-jsx/mp4/encoder` has no Node imports or filesystem access. It compiles the
 embedded WASM lazily, reuses the compiled module, and gives each encoder an
 independent instance. This entry point can be bundled for a browser; runtime
