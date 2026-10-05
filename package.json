@@ -1,6 +1,6 @@
 {
   "name": "@gum-jsx/mp4",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "description": "Render animated Gum figures to MP4 with Rust and WebAssembly.",
   "module": "src/index.ts",
   "types": "src/index.ts",
