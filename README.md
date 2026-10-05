@@ -6,7 +6,7 @@ WebAssembly. No FFmpeg, native add-on, install script, or Rust toolchain is need
 for ordinary use. This package is a library; use the main `gum` CLI for MP4 output
 and frame previews.
 
-## Run the example
+## Run the examples
 
 From the workspace root:
 
@@ -33,6 +33,19 @@ Edit `start_x`, `end_x`, `radius`, `pitch`, `speed`, or `eye` in `examples/orbit
 to change the path or camera. Duration follows the travel distance and speed.
 The trail grows from the starting point; each frame is computed directly from time.
 
+`examples/life.jsx` runs Conway's Game of Life on a seeded 72 × 30 grid with
+wraparound edges. It shows one generation per frame at 12 fps for sixteen seconds;
+newborn and surviving cells have distinct colors. Edit `seed`, `density`, `columns`,
+or `rows` to change the world. Generations are precomputed so previews can seek
+directly to any frame.
+
+```sh
+bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/life.jsx --time 5 \
+  -o gum-jsx-mp4/out/life.png
+bun gum-jsx-cli/src/cli.ts gum-jsx-mp4/examples/life.jsx \
+  -o gum-jsx-mp4/out/life.mp4
+```
+
 `--qp 18` sets the H.264 quantizer; valid integers
 are 10–51, with lower values giving higher quality and larger files. Default: 18.
 This is a fixed quantizer, not FFmpeg/x264's CRF quality scale.
@@ -42,28 +55,45 @@ is redirected. Use `-o frame.png` to save PNG bytes. Preview and PNG export do n
 
 ## Source format
 
-Use ordinary Gum JSX function-body source, with an explicit `return` and no
-imports or exports. Core and math bindings plus the timing helpers are in scope.
-The source is evaluated once; the returned frame function runs for each frame.
+Return a top-level `Video` component from ordinary Gum JSX function-body source,
+with no imports or exports. A bare `<Video ... />` is also valid. Core and math
+bindings, `Video`, and the timing helpers are in scope. The source is evaluated
+once; the frame generator runs on demand for each frame.
 
 ```jsx
-return {
-  size: [640, 360],
-  fps: 30,
-  duration: 3,
-  background: '#ffffff',
-  frame: ({ time, frame, fps }) => (
+return <Video
+  size={[640, 360]}
+  fps={30}
+  duration={3}
+  background="#ffffff"
+  frame={({ time, frame, fps }) => (
     <Box padding={em(1)} font-size={px(36)}>
       <Text>{time.toFixed(2)} seconds</Text>
     </Box>
-  ),
-}
+  )}
+/>
 ```
 
-- `size`, `fps`, `duration`, and `frame` are required; the default background is white.
+For prebuilt frames, pass elements as children instead of `frame` and `duration`.
+Each child occupies one frame; duration is the child count divided by `fps`.
+Arrays and fragments flatten into frames, and conditional children are supported.
+The component snapshots the children when constructed.
+
+```jsx
+return (
+  <Video size={[640, 360]} fps={2}>
+    <Svg background="red" />
+    <Svg background="blue" />
+  </Video>
+)
+```
+
+- `size` and `fps` are required; the default background is white. Choose either
+  nonempty children, or `frame` with `duration` in seconds. Combining them is an error.
 - `frame` receives a zero-based integer index, `time = frame / fps` in seconds,
   and `fps`. Return a Gum element synchronously.
-- Frame count is `ceil(duration * fps)`; encoded duration is that count divided
+- Generator frame count is `ceil(duration * fps)`; lists use their exact length.
+  Encoded duration is the frame count divided
   by fps, rounded to microseconds. The exact end time is not sampled. Fractional
   frame rates such as `30000 / 1001` use rounded absolute timestamps to avoid drift.
 - `gum --time` selects `floor(time * fps)`; time must be in `[0, duration)`.
@@ -74,6 +104,10 @@ return {
 - Frames should depend only on their inputs and precomputed data. Avoid mutable
   counters, wall-clock time, and random calls inside the frame function. Compute
   random geometry once outside it, using `setSeed` for reproducibility.
+
+`Video` describes a timeline and belongs at the top level; its frames are ordinary
+Gum layout elements. The original `{ size, fps, duration, frame, background }`
+descriptions remain accepted.
 
 Helpers: `lerp(a, b, progress)`, `progress(time, start, duration)` (clamped), and
 `ease_in_out(progress)` (smoothstep). For example:
@@ -89,7 +123,9 @@ await render_mp4(mp4, 'scene.mp4', { qp: 18 })
 await Bun.write('frame.png', create_renderer(mp4).png(30))
 ```
 
-You can also construct a typed `Video` directly. `create_renderer` exposes
+You can also import `Video` and construct it directly with `new Video({ size, fps,
+children: frames })` or `new Video({ size, fps, duration, frame })`. `VideoProps` describes
+these two prop forms. `create_renderer` exposes
 `frame_count`, `fragment(index)`, `pixels(index)`, and `png(index)`.
 `render_mp4` accepts a destination path or a chunk callback as its second argument.
 Callback writes are awaited for backpressure; a failed callback may leave a partial

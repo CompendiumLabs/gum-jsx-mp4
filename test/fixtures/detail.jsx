@@ -1,10 +1,10 @@
 // Small text, colored strokes, and moving geometry exercise video compression.
-return {
-  size: [320, 180],
-  fps: 12,
-  duration: 1,
-  background: '#ffffff',
-  frame: ({ time }) => (
+return <Video
+  size={[320, 180]}
+  fps={12}
+  duration={1}
+  background="#ffffff"
+  frame={({ time }) => (
     <Box padding={em(1)} font-size={px(12)}>
       <VStack gap={em(0.5)} align="fill">
         <Text font-weight="bold">Small type · 0123456789 · x + y = z</Text>
@@ -22,5 +22,5 @@ return {
         <Text>Thin strokes and moving curves</Text>
       </VStack>
     </Box>
-  ),
-}
+  )}
+/>

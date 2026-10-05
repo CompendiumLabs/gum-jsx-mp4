@@ -3,7 +3,7 @@ import { dirname, join, resolve } from 'node:path'
 import { setImmediate } from 'node:timers/promises'
 import { create_encoder } from './encoder'
 import { create_renderer } from './scene'
-import type { Video } from './scene'
+import type { Video, VideoProps } from './video'
 
 export type RenderOptions = Readonly<{
   /** H.264 quantizer, 10–51. Lower is higher quality; default 18. */
@@ -15,7 +15,7 @@ export type Mp4Sink = (chunk: Uint8Array) => void | Promise<void>
 
 /** Stream MP4 to a sink, or atomically replace a file after a successful export.
  * Sink writes are awaited for backpressure; a failed sink may contain partial MP4. */
-export async function render_mp4(video: Video, output: string | Mp4Sink, options: RenderOptions = {}): Promise<void> {
+export async function render_mp4(video: Video | VideoProps, output: string | Mp4Sink, options: RenderOptions = {}): Promise<void> {
   const renderer = create_renderer(video)
   options.signal?.throwIfAborted()
   const encoder = create_encoder({ size: renderer.video.size, fps: renderer.video.fps,

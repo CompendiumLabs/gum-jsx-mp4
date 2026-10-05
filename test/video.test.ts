@@ -2,7 +2,9 @@ import { afterEach, expect, test } from 'bun:test'
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { create_renderer, evaluate_mp4, render_mp4, validate_mp4, progress, ease_in_out, lerp } from '../src'
+import { Svg } from '@gum-jsx/core'
+import { Video, is_video, create_renderer, evaluate_mp4, render_mp4, validate_mp4,
+  progress, ease_in_out, lerp } from '../src'
 
 const directories: string[] = []
 async function directory() {
@@ -15,16 +17,18 @@ afterEach(async () => {
 })
 
 function scene() {
-  return evaluate_mp4(`return {
-    size: [64, 48], fps: 3, duration: 1,
-    frame: ({ frame }) => <Svg width={px(1)} height={px(1)} background={['red', 'lime', 'blue'][frame]} />,
-  }`)
+  return evaluate_mp4(`<Video
+    size={[64, 48]} fps={3} duration={1}
+    frame={({ frame }) => (
+      <Svg width={px(1)} height={px(1)} background={['red', 'lime', 'blue'][frame]} />
+    )}
+  />`)
 }
 
 test('frame timing, fixed viewport, and random access', () => {
   const original = scene()
   const calls: unknown[] = []
-  const renderer = create_renderer({ ...original, duration: 0.8, frame(context) {
+  const renderer = create_renderer({ size: original.size, fps: original.fps, duration: 0.8, frame(context) {
     calls.push(context)
     return original.frame(context)
   } })
@@ -40,6 +44,80 @@ test('frame timing, fixed viewport, and random access', () => {
     { time: 2 / 3, frame: 2, fps: 3 },
   ])
   expect(() => renderer.pixels(3)).toThrow('frame must')
+})
+
+test('Video snapshots frame lists and preserves exact frame counts', () => {
+  const red = new Svg({ background: 'red' })
+  const blue = new Svg({ background: 'blue' })
+  const frames = [red, red, red, red, red, red, blue]
+  const size: [number, number] = [64, 48]
+  const video = new Video({ size, fps: 25, children: frames })
+  frames[6] = red
+  frames.push(red)
+  size[0] = 80
+
+  expect(video.duration).toBe(7 / 25)
+  expect(video.frame_count).toBe(7)
+  expect(Object.isFrozen(video)).toBe(true)
+  expect(Object.isFrozen(video.children)).toBe(true)
+  expect(Object.isFrozen(video.size)).toBe(true)
+  expect(validate_mp4(video)).toBe(video)
+  expect(is_video(video)).toBe(true)
+  const renderer = create_renderer(video)
+  expect(renderer.frame_count).toBe(7)
+  const last = renderer.pixels(6)
+  expect([last.width, last.height]).toEqual([64, 48])
+  expect([...last.data.slice(0, 4)]).toEqual([0, 0, 255, 255])
+  expect([...renderer.pixels(0).data.slice(0, 4)]).toEqual([255, 0, 0, 255])
+  expect(() => renderer.pixels(7)).toThrow('frame must')
+})
+
+test('Video JSX accepts frame children and leaves generators lazy', () => {
+  const video = evaluate_mp4(`<Video size={[64, 48]} fps={2}>
+    <Svg background="red" />
+    <Svg background="blue" />
+  </Video>`)
+  expect(video).toBeInstanceOf(Video)
+  expect(video.duration).toBe(1)
+  expect([...create_renderer(video).pixels(1).data.slice(0, 4)]).toEqual([0, 0, 255, 255])
+  const lazy = evaluate_mp4(`<Video size={[64, 48]} fps={2} duration={1}
+    frame={() => { throw new Error('called on demand') }} />`)
+  expect(() => create_renderer(lazy).pixels(0)).toThrow('Frame 0 (0s): called on demand')
+})
+
+test('Video flattens child arrays and fragments and accepts a single frame', () => {
+  const video = evaluate_mp4(`<Video size={[64, 48]} fps={2}>
+    {false && <Svg />}
+    <>
+      <Svg background="red" />
+      {[null, [<Svg background="blue" />]]}
+    </>
+  </Video>`)
+  expect(video.frame_count).toBe(2)
+  expect(video.duration).toBe(1)
+  expect([...create_renderer(video).pixels(1).data.slice(0, 4)]).toEqual([0, 0, 255, 255])
+  const single = new Video({ size: [64, 48], fps: 2, children: new Svg() })
+  expect(single.frame_count).toBe(1)
+  expect(single.duration).toBe(0.5)
+})
+
+test('Video rejects empty, invalid, and conflicting frame sources', () => {
+  for (const props of [
+    'children={[]}', 'children={[42]}', 'children={Array(2)}', 'children="invalid"',
+    'children={[<Circle />]} duration={1}',
+    'children={[<Circle />]} frame={() => <Circle />}',
+    'frame={() => <Circle />}', '',
+  ]) {
+    expect(() => evaluate_mp4(`<Video size={[64, 48]} fps={2} ${props} />`)).toThrow()
+  }
+})
+
+test('original generator descriptions remain valid library inputs', () => {
+  const source = { size: [64, 48] as const, fps: 2, duration: 1, frame: () => new Svg() }
+  expect(is_video(source)).toBe(true)
+  expect(is_video(new Svg())).toBe(false)
+  expect(validate_mp4(source)).toBeInstanceOf(Video)
+  expect(create_renderer(source).frame_count).toBe(2)
 })
 
 test('rejects invalid descriptions and frame results', () => {
@@ -68,7 +146,7 @@ test('frame failure preserves existing output and removes temporary files', asyn
   const output = join(path, 'out.mp4')
   await writeFile(output, 'existing')
   const video = scene()
-  await expect(render_mp4({ ...video, frame(context) {
+  await expect(render_mp4({ size: video.size, fps: video.fps, duration: video.duration, frame(context) {
     if (context.frame === 1) throw new Error('test frame failure')
     return video.frame(context)
   } }, output)).rejects.toThrow('test frame failure')

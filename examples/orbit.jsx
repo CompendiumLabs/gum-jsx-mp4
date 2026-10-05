@@ -126,10 +126,12 @@ const frame = ({ time }) => {
   )
 }
 
-return {
-  size: [960, 540],
-  fps: 30,
-  duration,
-  background: '#101827',
-  frame,
-}
+return (
+  <Video
+    size={[960, 540]}
+    fps={30}
+    duration={duration}
+    background="#101827"
+    frame={frame}
+  />
+)
