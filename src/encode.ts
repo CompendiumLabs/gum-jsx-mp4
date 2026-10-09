@@ -1,11 +1,15 @@
 import { mkdtemp, open, rename, rm } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { setImmediate } from 'node:timers/promises'
+import type { FontProvider } from '@gum-jsx/core'
+import type { MathFontProvider } from '@gum-jsx/math'
 import { create_encoder } from './encoder'
 import { create_renderer } from './scene'
 import type { Video, VideoProps } from './video'
 
 export type RenderOptions = Readonly<{
+  fonts?: FontProvider
+  math_fonts?: MathFontProvider
   /** H.264 quantizer, 10–51. Lower is higher quality; default 18. */
   qp?: number
   signal?: AbortSignal
@@ -16,7 +20,7 @@ export type Mp4Sink = (chunk: Uint8Array) => void | Promise<void>
 /** Stream MP4 to a sink, or atomically replace a file after a successful export.
  * Sink writes are awaited for backpressure; a failed sink may contain partial MP4. */
 export async function render_mp4(video: Video | VideoProps, output: string | Mp4Sink, options: RenderOptions = {}): Promise<void> {
-  const renderer = create_renderer(video)
+  const renderer = create_renderer(video, options)
   options.signal?.throwIfAborted()
   const encoder = create_encoder({ size: renderer.video.size, fps: renderer.video.fps,
     frame_count: renderer.frame_count, qp: options.qp })

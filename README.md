@@ -191,6 +191,14 @@ temporary files and preserve any existing output. Parent directories must exist.
 Cancellation is observed between frames and writes. Fonts and layout caches are
 reused, and only the current raw and compressed frame buffers are retained.
 
+Pass `{ fonts }` to `create_renderer(video, options)` or
+`render_mp4(video, output, options)` to use a custom font provider. A registry
+created with `createMathFonts()` retains bundled text and math faces while
+allowing extra fonts to be registered before rendering.
+Both APIs also accept `math_fonts`, a `MathFontProvider` from `@gum-jsx/math`;
+for example, `new KatexMathFontProvider('My Math')` selects a loaded family for
+ordinary math glyphs while retaining KaTeX layout parameters and size fonts.
+
 minih264 is an experimental upstream encoder. See [WASM implementation](docs/WASM.md)
 for build details, measurements, and limitations, and
 [third-party notices](THIRD_PARTY_NOTICES.md) for its license.

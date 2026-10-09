@@ -1,4 +1,5 @@
 import { Element, Evaluator, LayoutPass, exact, layout_element, make_request, px } from '@gum-jsx/core'
+import type { FontProvider } from '@gum-jsx/core'
 import * as math from '@gum-jsx/math'
 import { render_pixels, render_png } from '@gum-jsx/png'
 import * as timing from './timing'
@@ -11,11 +12,12 @@ export function evaluate_mp4(source: string, name = 'video.jsx'): Video {
 }
 
 /** Reuse fonts and layout caches while rendering independently addressable frames. */
-export function create_renderer(value: Video | VideoProps) {
+export function create_renderer(value: Video | VideoProps,
+  { fonts = math.createMathFonts(), math_fonts }: { fonts?: FontProvider; math_fonts?: math.MathFontProvider } = {}) {
   const video = validate_mp4(value)
   const [width, height] = video.size
   const pass = new LayoutPass()
-  const fonts = math.createMathFonts()
+  if (math_fonts) pass.set_resource('math_fonts', math_fonts, 0)
   const { frame_count } = video
   function fragment(frame: number) {
     if (!Number.isInteger(frame) || frame < 0 || frame >= frame_count) {
