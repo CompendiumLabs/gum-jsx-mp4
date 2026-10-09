@@ -84,8 +84,8 @@ The component snapshots the children when constructed.
 ```jsx
 return (
   <Video size={[640, 360]} fps={2}>
-    <Svg background="red" />
-    <Svg background="blue" />
+    <Page background="red" />
+    <Page background="blue" />
   </Video>
 )
 ```

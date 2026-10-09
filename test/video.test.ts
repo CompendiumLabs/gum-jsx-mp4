@@ -2,7 +2,7 @@ import { afterEach, expect, test } from 'bun:test'
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { Svg } from '@gum-jsx/core'
+import { Page } from '@gum-jsx/core'
 import { Video, is_video, create_renderer, evaluate_mp4, render_mp4, validate_mp4,
   progress, ease_in_out, lerp } from '../src'
 
@@ -20,7 +20,7 @@ function scene() {
   return evaluate_mp4(`<Video
     size={[64, 48]} fps={3} duration={1}
     frame={({ frame }) => (
-      <Svg width={px(1)} height={px(1)} background={['red', 'lime', 'blue'][frame]} />
+      <Page width={px(1)} height={px(1)} background={['red', 'lime', 'blue'][frame]} />
     )}
   />`)
 }
@@ -47,8 +47,8 @@ test('frame timing, fixed viewport, and random access', () => {
 })
 
 test('Video snapshots frame lists and preserves exact frame counts', () => {
-  const red = new Svg({ background: 'red' })
-  const blue = new Svg({ background: 'blue' })
+  const red = new Page({ background: 'red' })
+  const blue = new Page({ background: 'blue' })
   const frames = [red, red, red, red, red, red, blue]
   const size: [number, number] = [64, 48]
   const video = new Video({ size, fps: 25, children: frames })
@@ -74,8 +74,8 @@ test('Video snapshots frame lists and preserves exact frame counts', () => {
 
 test('Video JSX accepts frame children and leaves generators lazy', () => {
   const video = evaluate_mp4(`<Video size={[64, 48]} fps={2}>
-    <Svg background="red" />
-    <Svg background="blue" />
+    <Page background="red" />
+    <Page background="blue" />
   </Video>`)
   expect(video).toBeInstanceOf(Video)
   expect(video.duration).toBe(1)
@@ -87,16 +87,16 @@ test('Video JSX accepts frame children and leaves generators lazy', () => {
 
 test('Video flattens child arrays and fragments and accepts a single frame', () => {
   const video = evaluate_mp4(`<Video size={[64, 48]} fps={2}>
-    {false && <Svg />}
+    {false && <Page />}
     <>
-      <Svg background="red" />
-      {[null, [<Svg background="blue" />]]}
+      <Page background="red" />
+      {[null, [<Page background="blue" />]]}
     </>
   </Video>`)
   expect(video.frame_count).toBe(2)
   expect(video.duration).toBe(1)
   expect([...create_renderer(video).pixels(1).data.slice(0, 4)]).toEqual([0, 0, 255, 255])
-  const single = new Video({ size: [64, 48], fps: 2, children: new Svg() })
+  const single = new Video({ size: [64, 48], fps: 2, children: new Page() })
   expect(single.frame_count).toBe(1)
   expect(single.duration).toBe(0.5)
 })
