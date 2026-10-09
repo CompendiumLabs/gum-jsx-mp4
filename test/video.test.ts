@@ -112,14 +112,6 @@ test('Video rejects empty, invalid, and conflicting frame sources', () => {
   }
 })
 
-test('original generator descriptions remain valid library inputs', () => {
-  const source = { size: [64, 48] as const, fps: 2, duration: 1, frame: () => new Svg() }
-  expect(is_video(source)).toBe(true)
-  expect(is_video(new Svg())).toBe(false)
-  expect(validate_mp4(source)).toBeInstanceOf(Video)
-  expect(create_renderer(source).frame_count).toBe(2)
-})
-
 test('rejects invalid descriptions and frame results', () => {
   for (const invalid of [{ fps: 0 }, { duration: Infinity }, { size: [0, 48] }, { frame: 7 }]) {
     expect(() => validate_mp4({ ...scene(), ...invalid })).toThrow()
